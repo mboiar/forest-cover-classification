@@ -9,6 +9,7 @@ import joblib
 import numpy as np
 from flask import Flask, request
 from keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
 
 app = Flask(__name__)
 
@@ -20,6 +21,7 @@ def classify_data() -> Any:
     if request_data is None:
         return None
     feature_data = np.array(request_data.get("feature_data")).reshape(1, -1)
+    feature_data = MinMaxScaler().fit_transform(feature_data)
     if feature_data is None:
         return None
 
@@ -33,7 +35,8 @@ def classify_data() -> Any:
 
     elif model_name + ".h5" in os.listdir("trained_models"):
         model = load_model(os.path.join("trained_models", model_name + ".h5"))
-        return {"prediction": model.predict(feature_data).tolist()}
+        y_pred = np.argmax(model.predict(feature_data), axis=1).tolist()
+        return {"prediction": y_pred}
 
     else:
         return None
