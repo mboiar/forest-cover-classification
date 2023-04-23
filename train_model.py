@@ -43,6 +43,7 @@ def load_split_dataset(
     data = np.loadtxt(dataset_path, delimiter=",")
     X = data[:, :-1]
     y = data[:, -1]
+
     return train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
@@ -120,7 +121,7 @@ def init_model(model_name: str) -> Any | None:
     """Initialize one of available models."""
     match model_name:
         case "NaiveBayes":
-            model: Any = GaussianNaiveBayes()
+            model: Any = make_pipeline(StandardScaler(), GaussianNaiveBayes())
         case "DecisionTree":
             model = DecisionTreeClassifier(
                 criterion="gini", min_samples_split=2
