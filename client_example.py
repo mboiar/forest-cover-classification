@@ -7,16 +7,16 @@ import requests
 if __name__ == "__main__":
     payload = {
         "feature_data": [
-            2596,
-            51,
-            3,
-            258,
-            0,
-            510,
-            221,
-            232,
-            148,
-            6279,
+            2590,
+            56,
+            2,
+            212,
+            -6,
+            390,
+            220,
+            235,
+            151,
+            6225,
             1,
             0,
             0,
@@ -62,7 +62,7 @@ if __name__ == "__main__":
             0,
             0,
         ],
-        "model": "DecisionTree",
+        "model": "NN",
     }
     res = requests.post("http://192.168.0.101:5000/classify", json=payload)
     print(res.status_code)

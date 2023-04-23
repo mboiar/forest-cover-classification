@@ -3,16 +3,66 @@ Custom multiclass classifiers.
 
 Classes
 -------
-GaussianNaiveBayes - An impleentation of Naive Bayes classification model
-NN - Custom Tensorflow neural network classifier
+GaussianNaiveBayes - a Naive Bayes classification model
+
+Functions
+---------
+create_model - build a custom Keras classification model
+optimize_model - optimize hyperparameters using grid search
+
 """
 
+from typing import Any
+
+import keras
 import numpy as np
+from keras import layers, losses, optimizers
 from numpy.typing import ArrayLike
+from sklearn.model_selection import GridSearchCV
 
 
-class NN:
-    pass
+def create_model(units: int, learning_rate: float) -> keras.models.Model:
+    """Create classification model based on hyperparameters."""
+    num_features = 54
+    num_classes = 7
+    model = keras.Sequential()
+    model.add(layers.Dense(32, input_shape=(num_features,), activation="relu"))
+    model.add(layers.Dense(units=units, activation="relu"))
+    model.add(layers.Dense(32, activation="relu"))
+    model.add(layers.Dense(num_classes, activation="softmax"))
+
+    model.compile(
+        optimizer=optimizers.Adam(learning_rate=learning_rate),
+        loss=losses.SparseCategoricalCrossentropy(),
+        metrics=["accuracy"],
+    )
+
+    return model
+
+
+def optimize_model(
+    model: Any, X: ArrayLike, y: ArrayLike, verbose: bool = True
+) -> Any:
+    """Optimize model hyperparameters using Sklearn grid search."""
+    units = np.array([32, 64, 128])
+    learning_rate = np.array([1e-3, 1e-4])
+    epochs = np.array([50, 100, 150])
+    batches = np.array([32, 64, 128])
+
+    param_grid = dict(
+        units=units,
+        learning_rate=learning_rate,
+        nb_epoch=epochs,
+        batch_size=batches,
+    )
+    grid = GridSearchCV(
+        estimator=model, param_grid=param_grid, n_jobs=-1, scoring="accuracy"
+    )
+    optimized_model = grid.fit(X, y)
+    if verbose:
+        print(f"Best score: {optimized_model.best_score_}")
+        print(f"Best params: {optimized_model.best_params_}")
+    return optimized_model.best_estimator_
 
 
 class GaussianNaiveBayes:

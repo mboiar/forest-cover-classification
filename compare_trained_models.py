@@ -9,6 +9,7 @@ import sys
 from typing import Dict, Union
 
 import joblib
+from keras.models import load_model
 
 from train_model import load_split_dataset, test_model
 
@@ -19,10 +20,15 @@ def compare_models(
     """Load and evaluate models"""
     # load all trained models
     model_filenames = os.listdir(dirpath)
-    models = [
-        joblib.load(open(os.path.join(dirpath, filename), "rb"))
-        for filename in model_filenames
-    ]
+    models = []
+    for filename in model_filenames:
+        if filename.endswith(".pkl"):
+            model = joblib.load(open(os.path.join(dirpath, filename), "rb"))
+            models.append(model)
+        elif filename.endswith(".h5"):
+            model = load_model(os.path.join(dirpath, filename))
+            models.append(model)
+
     if not models:
         print("No trained models found.")
         sys.exit(0)
