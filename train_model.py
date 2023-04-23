@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Union
 
 import joblib
 import numpy as np
+from keras.wrappers.scikit_learn import KerasClassifier
 from numpy.typing import ArrayLike
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, confusion_matrix
@@ -28,10 +29,10 @@ from sklearn.model_selection import (
 )
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from models import GaussianNaiveBayes
+from models import GaussianNaiveBayes, create_model, optimize_model
 
 
 def load_split_dataset(
@@ -44,6 +45,9 @@ def load_split_dataset(
     X = data[:, :-1]
     y = data[:, -1]
 
+    scaler = MinMaxScaler()
+    X = scaler.fit_transform(X)
+
     return train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
@@ -55,10 +59,13 @@ def save_model(
     model_name: str,
 ) -> None:
     print(f"Saving model {model_name} to {save_path}")
-    filename = os.path.join(save_path, model_name + ".pkl")
-    joblib.dump(
-        model, filename, compress=3
-    )  # use compression to avoid large file size
+    if hasattr(model, "model"):
+        model.model.save(os.path.join(save_path, model_name + ".h5"))
+    else:
+        filename = os.path.join(save_path, model_name + ".pkl")
+        joblib.dump(
+            model, filename, compress=3
+        )  # use compression to avoid large file size
 
 
 def test_model(
@@ -121,15 +128,17 @@ def init_model(model_name: str) -> Any | None:
     """Initialize one of available models."""
     match model_name:
         case "NaiveBayes":
-            model: Any = make_pipeline(StandardScaler(), GaussianNaiveBayes())
+            model: Any = make_pipeline(MinMaxScaler(), GaussianNaiveBayes())
         case "DecisionTree":
             model = DecisionTreeClassifier(
                 criterion="gini", min_samples_split=2
             )
         case "KNN":
             model = make_pipeline(
-                StandardScaler(), KNeighborsClassifier(n_neighbors=5, n_jobs=2)
+                MinMaxScaler(), KNeighborsClassifier(n_neighbors=5, n_jobs=2)
             )
+        case "NN":
+            model = KerasClassifier(build_fn=create_model)
         case _:
             return None
     return model
@@ -161,6 +170,9 @@ if __name__ == "__main__":
 
     # train and save model
     print(f"Training model {model}")
-    model.fit(X_train, y_train)
+    if isinstance(model, KerasClassifier):
+        model = optimize_model(model, X_train, y_train)
+    else:
+        model.fit(X_train, y_train)
     test_model(model, X_train, X_test, y_train, y_test, save=True)
     save_model(model, model_save_path, model_save_name)

@@ -1,11 +1,15 @@
 # Evaluation of different classification models on CoverType dataset
 
+## Dataset source
+
+ https://archive.ics.uci.edu/ml/datasets/covertype
+
 ## Classifiers
 
 - DecisionTree (Acc. 88%)
 - KNN (Acc. 87%)
 - NaiveBayes
-- Neural Network
+- Neural Network (Acc. 75%)
 
 ## Usage
 

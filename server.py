@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional
 import joblib
 import numpy as np
 from flask import Flask, request
+from keras.models import load_model
 
 app = Flask(__name__)
 
@@ -29,5 +30,10 @@ def classify_data() -> Any:
             os.path.join("trained_models", model_name + ".pkl")
         )
         return {"prediction": model.predict(feature_data).tolist()}
+
+    elif model_name + ".h5" in os.listdir("trained_models"):
+        model = load_model(os.path.join("trained_models", model_name + ".h5"))
+        return {"prediction": model.predict(feature_data).tolist()}
+
     else:
         return None
