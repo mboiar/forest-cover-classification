@@ -13,22 +13,21 @@ save_model:         save model in a pickle format
 
 import json
 import os
-import pickle
 import sys
 from typing import Any, Dict, Iterable, List, Union
 
+import joblib
 import numpy as np
-from sklearn.metrics import (
-    classification_report, confusion_matrix
-)
+from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import (
-    cross_val_predict, cross_val_score, train_test_split
+    cross_val_predict,
+    cross_val_score,
+    train_test_split,
 )
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
-import joblib
 
 from models import NaiveBayes
 
@@ -74,7 +73,9 @@ def test_model(
     if verbose:
         print(f"Training accuracy: {results['train_score']:.2f}%")
     results["cross_val_accuracy"] = (
-        cross_val_score(model, X_test, y_test, scoring="accuracy", cv=10).mean()
+        cross_val_score(
+            model, X_test, y_test, scoring="accuracy", cv=10
+        ).mean()
         * 100
     )
     if verbose:
