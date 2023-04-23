@@ -14,10 +14,12 @@ save_model:         save model in a pickle format
 import json
 import os
 import sys
-from typing import Any, Dict, Iterable, List, Union
+from typing import Any, Dict, List, Union
 
 import joblib
 import numpy as np
+from numpy.typing import ArrayLike
+from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import (
     cross_val_predict,
@@ -29,7 +31,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from models import NaiveBayes
+from models import GaussianNaiveBayes
 
 
 def load_split_dataset(
@@ -53,43 +55,53 @@ def save_model(
 ) -> None:
     print(f"Saving model {model_name} to {save_path}")
     filename = os.path.join(save_path, model_name + ".pkl")
-    joblib.dump(model, filename, compress=3)
+    joblib.dump(
+        model, filename, compress=3
+    )  # use compression to avoid large file size
 
 
 def test_model(
     model: Any,
-    X_train: Iterable,
-    X_test: Iterable,
-    y_train: Iterable,
-    y_test: Iterable,
+    X_train: ArrayLike,
+    X_test: ArrayLike,
+    y_train: ArrayLike,
+    y_test: ArrayLike,
     verbose: bool = True,
     save: bool = False,
 ) -> Dict:
     """Evaluate a classification model."""
     if verbose:
         print(f"Testing model {model}")
+
     results = {}
     results["train_score"] = model.score(X_train, y_train) * 100
     if verbose:
         print(f"Training accuracy: {results['train_score']:.2f}%")
-    results["cross_val_accuracy"] = (
-        cross_val_score(
+
+    if isinstance(model, BaseEstimator):
+        score = cross_val_score(
             model, X_test, y_test, scoring="accuracy", cv=10
         ).mean()
-        * 100
-    )
+        y_pred = cross_val_predict(model, X_test, y_test, cv=10)
+    else:
+        score = model.score(X_test, y_test)
+        y_pred = model.predict(X_test)
+
+    results["cross_val_accuracy"] = score * 100
     if verbose:
         print(
             f"Cross-validation accuracy: \
 {results['cross_val_accuracy']:.2f}%"
         )
-    y_pred = cross_val_predict(model, X_test, y_test, cv=10)
+
     results["conf_mat"] = confusion_matrix(y_test, y_pred).tolist()
     if verbose:
         print(f"Confusion matrix: {results['conf_mat']}")
+
     results["cl_report"] = classification_report(y_test, y_pred)
     if verbose:
         print(results["cl_report"])
+
     if save:
         if not os.path.exists("trained_models_reports"):
             os.makedirs("trained_models_reports")
@@ -100,14 +112,15 @@ def test_model(
             "w",
         ) as f:
             json.dump(results, f)
+
     return results
 
 
 def init_model(model_name: str) -> Any | None:
     """Initialize one of available models."""
     match model_name:
-        case "Heuristic":
-            model: Any = NaiveBayes()
+        case "NaiveBayes":
+            model: Any = GaussianNaiveBayes()
         case "DecisionTree":
             model = DecisionTreeClassifier(
                 criterion="gini", min_samples_split=2
